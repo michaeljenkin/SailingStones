@@ -1,0 +1,20 @@
+Name spaces for the cameras are /watcher1 ... /watchern
+yaml files are in the cfg directory and are called cam1.yaml through camn.yaml
+
+Each camera is expected to have a mask image in the data directory called
+watcher1mask.jpg through watchernmask.jpg
+
+The nodes
+
+publishStaticImage.py - publishes a  static image on a topic
+monitorChange.py - creates difference image and background image
+peopleBlobs.py - finds people (blobs) in a single image
+globalImage.py - builds the global image (demo use only)
+globalPeople.py - builds the global set of where people have been (demo use)
+globalWeight.py - builds the global weight map
+
+The topics
+
+/watchern/raw_image - raw image stream from camera n
+/watchern/background - estimated background
+/watchern/
