@@ -1,0 +1,97 @@
+<launch>
+
+  <group ns="watcher1">
+    <node pkg="sailing_stones" type="publishStaticImage.py" output="screen" name="static1">
+      <param name="source" value="$(find sailing_stones)/data/watcher1mask.jpg" />
+      <param name="output" value="/watcher1/mask" />
+    </node>
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="monitor1">
+      <param name="source" value="/watcher1/image_raw" />
+      <param name="sink" value="/watcher1/changed" />
+      <param name="background" value="/watcher1/background" />
+    </node>
+    <node pkg="sailing_stones" type="peopleBlobs.py" output="screen" name="people1">
+      <param name="rawImage" value="/watcher1/image_raw" />
+      <param name="maskImage" value="/watcher1/mask" />
+      <param name="diffImage" value="/watcher1/changed" />
+      <param name="peopleImage" value="/watcher1/people" />
+      <param name="peopleTracks" value="/watcher1/tracks" />
+    </node>
+  </group>
+
+  <group ns="watcher2">
+    <node pkg="sailing_stones" type="publishStaticImage.py" output="screen" name="static2">
+      <param name="source" value="$(find sailing_stones)/data/watcher2mask.jpg" />
+      <param name="output" value="/watcher2/mask" />
+    </node>
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="monitor2">
+      <param name="source" value="/watcher2/image_raw" />
+      <param name="sink" value="/watcher2/changed" />
+      <param name="background" value="/watcher2/background" />
+    </node>
+    <node pkg="sailing_stones" type="peopleBlobs.py" output="screen" name="people2">
+      <param name="rawImage" value="/watcher2/image_raw" />
+      <param name="maskImage" value="/watcher2/mask" />
+      <param name="diffImage" value="/watcher2/changed" />
+      <param name="peopleImage" value="/watcher2/people" />
+      <param name="peopleTracks" value="/watcher2/tracks" />
+    </node>
+  </group>
+
+  <group ns="watcher3">
+    <node pkg="sailing_stones" type="publishStaticImage.py" output="screen" name="static3">
+      <param name="source" value="$(find sailing_stones)/data/watcher3mask.jpg" />
+      <param name="output" value="/watcher3/mask" />
+    </node>
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="monitor3">
+      <param name="source" value="/watcher3/image_raw" />
+      <param name="sink" value="/watcher3/changed" />
+      <param name="background" value="/watcher3/background" />
+    </node>
+    <node pkg="sailing_stones" type="peopleBlobs.py" output="screen" name="people3">
+      <param name="rawImage" value="/watcher3/image_raw" />
+      <param name="maskImage" value="/watcher3/mask" />
+      <param name="diffImage" value="/watcher3/changed" />
+      <param name="peopleImage" value="/watcher3/people" />
+      <param name="peopleTracks" value="/watcher3/tracks" />
+    </node>
+  </group>
+
+  <group ns="watcher4">
+    <node pkg="sailing_stones" type="publishStaticImage.py" output="screen" name="static4">
+      <param name="source" value="$(find sailing_stones)/data/watcher4mask.jpg" />
+      <param name="output" value="/watcher4/mask" />
+    </node>
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="monitor4">
+      <param name="source" value="/watcher4/image_raw" />
+      <param name="sink" value="/watcher4/changed" />
+      <param name="background" value="/watcher4/background" />
+    </node>
+    <node pkg="sailing_stones" type="peopleBlobs.py" output="screen" name="people4">
+      <param name="rawImage" value="/watcher4/image_raw" />
+      <param name="maskImage" value="/watcher4/mask" />
+      <param name="diffImage" value="/watcher4/changed" />
+      <param name="peopleImage" value="/watcher4/people" />
+      <param name="peopleTracks" value="/watcher4/tracks" />
+    </node>
+  </group>
+
+  <group ns="watcher5">
+    <node pkg="sailing_stones" type="publishStaticImage.py" output="screen" name="static5">
+      <param name="source" value="$(find sailing_stones)/data/watcher5mask.jpg" />
+      <param name="output" value="/watcher5/mask" />
+    </node>
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="monitor5">
+      <param name="source" value="/watcher5/image_raw" />
+      <param name="sink" value="/watcher5/changed" />
+      <param name="background" value="/watcher5/background" />
+    </node>
+    <node pkg="sailing_stones" type="peopleBlobs.py" output="screen" name="people5">
+      <param name="rawImage" value="/watcher5/image_raw" />
+      <param name="maskImage" value="/watcher5/mask" />
+      <param name="diffImage" value="/watcher5/changed" />
+      <param name="peopleImage" value="/watcher5/people" />
+      <param name="peopleTracks" value="/watcher5/tracks" />
+    </node>
+  </group>
+</launch>

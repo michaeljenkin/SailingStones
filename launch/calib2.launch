@@ -1,0 +1,51 @@
+<launch>
+
+  <group ns="calibimage1">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera1_info_url" default="package://sailing_stones/cfg/calibcam1.yaml" />
+
+    <node pkg="sailing_stones" type="getimage.py" name="calibcam1" output="screen">
+      <param name="hostname" value="192.168.0.100" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub1)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="getpoints.py" output="screen" name="calibmon1">
+      <param name="source" value="/calibimage1/image_raw" />
+      <param name="sink" value="/calibpoints1/image_raw" />
+    </node>
+
+  </group>
+
+  <group ns="calibimage2">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera2_info_url" default="package://sailing_stones/cfg/calibcam2.yaml" />
+
+    <node pkg="sailing_stones" type="getimage.py" name="calibcam2" output="screen">
+      <param name="hostname" value="192.168.0.101" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="getpoints.py" output="screen" name="calibmon2">
+      <param name="source" value="/calibimage2/image_raw" />
+      <param name="sink" value="/calibpoints2/points" /> 
+    </node>
+
+  </group>
+<group ns="calibrate">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera2_info_url" default="package://sailing_stones/cfg/calibcam3.yaml" />
+
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="calibpoints.py" output="screen" name="calibpon">
+      <param name="source1" value="/calibimage1/image_raw" />
+      <param name="source2" value="/calibimage2/image_raw" />
+      <param name="sink" value="/calibrated/image_raw/> 
+    </node>
+
+  </group>
+</launch>

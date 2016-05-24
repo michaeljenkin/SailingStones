@@ -1,0 +1,274 @@
+<launch>
+
+  <group ns="watcher1">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera1_info_url" default="package://sailing_stones/cfg/cam1.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam1" output="screen">
+      <param name="hostname" value="192.168.0.103" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub1)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon1">
+      <param name="source" value="/watcher1/image_raw" />
+      <param name="sink" value="/changed1/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg1">
+      <param name="source" value="/changed1/image_raw" />
+      <param name="sink" value="/averaged1/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot1">
+      <param name="source1" value="/watcher1/image_raw" />
+      <param name="source2" value="/changed1/image_raw" />
+      <param name="sink" value="/path1/image_raw" />
+    </node>
+  </group>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro1">
+      <param name="source" value="/watcher1/image_raw" />
+      <param name="sink" value="/foundrobot1/image_raw" />
+    </node>
+
+  <group ns="watcher2">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera2_info_url" default="package://sailing_stones/cfg/cam2.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam2" output="screen">
+      <param name="hostname" value="192.168.0.105" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon2">
+      <param name="source" value="/watcher2/image_raw" />
+      <param name="sink" value="/changed2/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg2">
+      <param name="source" value="/changed2/image_raw" />
+      <param name="sink" value="/averaged2/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot2">
+      <param name="source1" value="/watcher2/image_raw" />
+      <param name="source2" value="/changed2/image_raw" />
+      <param name="sink" value="/path2/image_raw" />
+    </node>
+  </group>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro2">
+      <param name="source" value="/watcher2/image_raw" />
+      <param name="sink" value="/foundrobot2/image_raw" />
+    </node>
+
+
+<group ns="watcher3">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera3_info_url" default="package://sailing_stones/cfg/cam3.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam3" output="screen">
+      <param name="hostname" value="192.168.0.112" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon3">
+      <param name="source" value="/watcher3/image_raw" />
+      <param name="sink" value="/changed3/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg3">
+      <param name="source" value="/changed3/image_raw" />
+      <param name="sink" value="/averaged3/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot3">
+      <param name="source1" value="/watcher3/image_raw" />
+      <param name="source2" value="/changed3/image_raw" />
+      <param name="sink" value="/path3/image_raw" />
+    </node>
+  </group>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro3">
+      <param name="source" value="/watcher3/image_raw" />
+      <param name="sink" value="/foundrobot3/image_raw" />
+    </node>
+
+<group ns="watcher4">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera4_info_url" default="package://sailing_stones/cfg/cam4.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam4" output="screen">
+      <param name="hostname" value="192.168.0.107" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon4">
+      <param name="source" value="/watcher4/image_raw" />
+      <param name="sink" value="/changed4/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg4">
+      <param name="source" value="/changed4/image_raw" />
+      <param name="sink" value="/averaged4/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot4">
+      <param name="source1" value="/watcher4/image_raw" />
+      <param name="source2" value="/changed4/image_raw" />
+      <param name="sink" value="/path4/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro4">
+      <param name="source" value="/watcher4/image_raw" />
+      <param name="sink" value="/foundrobot4/image_raw" />
+    </node>
+
+  </group>
+
+<group ns="watcher5">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera5_info_url" default="package://sailing_stones/cfg/cam5.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam5" output="screen">
+      <param name="hostname" value="192.168.0.108" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon5">
+      <param name="source" value="/watcher5/image_raw" />
+      <param name="sink" value="/changed5/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg5">
+      <param name="source" value="/changed5/image_raw" />
+      <param name="sink" value="/averaged5/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot5">
+      <param name="source1" value="/watcher5/image_raw" />
+      <param name="source2" value="/changed5/image_raw" />
+      <param name="sink" value="/path5/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro5">
+      <param name="source" value="/watcher5/image_raw" />
+      <param name="sink" value="/foundrobot5/image_raw" />
+    </node>
+
+  </group>
+
+<group ns="watcher6">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera6_info_url" default="package://sailing_stones/cfg/cam6.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam6" output="screen">
+      <param name="hostname" value="192.168.0.110" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon6">
+      <param name="source" value="/watcher6/image_raw" />
+      <param name="sink" value="/changed6/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg6">
+      <param name="source" value="/changed6/image_raw" />
+      <param name="sink" value="/averaged6/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot6">
+      <param name="source1" value="/watcher6/image_raw" />
+      <param name="source2" value="/changed6/image_raw" />
+      <param name="sink" value="/path6/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro6">
+      <param name="source" value="/watcher6/image_raw" />
+      <param name="sink" value="/foundrobot6/image_raw" />
+    </node>
+
+  </group>
+<group ns="watcher7">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera7_info_url" default="package://sailing_stones/cfg/cam7.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam7" output="screen">
+      <param name="hostname" value="192.168.0.109" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon7">
+      <param name="source" value="/watcher7/image_raw" />
+      <param name="sink" value="/changed6/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg7">
+      <param name="source" value="/changed7/image_raw" />
+      <param name="sink" value="/averaged7/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot7">
+      <param name="source1" value="/watcher7/image_raw" />
+      <param name="source2" value="/changed7/image_raw" />
+      <param name="sink" value="/path7/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro6">
+      <param name="source" value="/watcher7/image_raw" />
+      <param name="sink" value="/foundrobot7/image_raw" />
+    </node>
+
+  </group>
+
+<group ns="watcher8">
+    <arg name="std_topic" default="image_raw"/>
+    <arg name="camera8_info_url" default="package://sailing_stones/cfg/cam8.yaml" />
+
+    <node pkg="sailing_stones" type="nanycam.py" name="cam8" output="screen">
+      <param name="hostname" value="192.168.0.111" />
+      <param name="username" value="admin" />
+      <param name="password" value="need4speed" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(anon repub2)" args="compressed in:=$(arg std_topic) raw out:=$(arg std_topic)" />
+
+    <node pkg="sailing_stones" type="monitorChange.py" output="screen" name="mon8">
+      <param name="source" value="/watcher8/image_raw" />
+      <param name="sink" value="/changed8/image_raw" />
+    </node>
+
+    <node pkg="sailing_stones" type="integrateImages.py" output="screen" name="avg8">
+      <param name="source" value="/changed8/image_raw" />
+      <param name="sink" value="/averaged8/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="motionImages.py" output="screen" name="mot8">
+      <param name="source1" value="/watcher8/image_raw" />
+      <param name="source2" value="/changed8/image_raw" />
+      <param name="sink" value="/path6/image_raw" />
+    </node>
+
+<node pkg="sailing_stones" type="findrobot.py" output="screen" name="fro8">
+      <param name="source" value="/watcher8/image_raw" />
+      <param name="sink" value="/foundrobot8/image_raw" />
+    </node>
+
+  </group>
+
+
+
+</launch>
