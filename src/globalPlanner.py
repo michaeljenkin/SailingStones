@@ -10,6 +10,8 @@ import rospy
 import sys
 import cv2
 import numpy as np 
+import math
+import copy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError;
 import yaml
@@ -22,11 +24,11 @@ from std_srvs.srv import *
 
 class globalPlanner :
  
-  def __init__(self, startloc, occupancy, nogo, been, waypoints, prettyMap, peopleTrigger, replanTrigger) :
-    self.ALPHA = 0.1
+  def __init__(self, startloc, occupancy, nogo, been, search, waypoints, prettyMap, peopleTrigger, replanTrigger) :
+    self.WIDTH = 20
 
     t = startloc.split(',')
-    self.locn = (t[0], t[1])
+    self.locn = (int(t[0]), int(t[1]))
     self.occupancy = None
     self.nogo = None
     self.been = None
@@ -34,6 +36,8 @@ class globalPlanner :
 
     self.prettyMap_pub = rospy.Publisher(prettyMap, Image, queue_size=1)
     self.been_pub = rospy.Publisher(been, Image, queue_size=1)
+    self.search_pub = rospy.Publisher(search, Image, queue_size=1)
+    self.reset = rospy.ServiceProxy(peopleTrigger, Trigger)
 
     self.bridge = CvBridge()
 
@@ -43,34 +47,50 @@ class globalPlanner :
     rospy.Service(replanTrigger, Trigger, self.replanCallback)
 
   def replanCallback(self, data) :
+    if self.occupancy == None :
+      return TriggerResponse(False, "no occupancy grid yet")
     if self.been == None :
       self.been = self.occupancy.copy()
-      self.been.fill(0)
-    self.size = self.been.shape()[0:1]
-    print self.size
+      self.been.fill(1)
+    self.size = self.been.shape
+    self.size = (int(self.size[0]), int(self.size[1]))
 
-    wheretogo = cv2.addWeighted(self.been, self.ALPHA, self.occupancy, 1-self.ALPHA, 0)
+    wheretogo = cv2.divide(self.occupancy, self.been)
+
     t = cv2.minMaxLoc(wheretogo)
-    z = self.findPath(self.locn, t)
+    z = self.findPath(self.locn, t[3])
     print z
+
+    if z != None :
+      cv2.circle(self.been, (int(t[3][0]-self.WIDTH/2), int(t[3][0]-self.WIDTH/2)), self.WIDTH, 255, thickness=cv2.cv.CV_FILLED)
+      try :
+        self.been_pub.publish(self.bridge.cv2_to_imgmsg(self.been, "mono8"))
+      except CvBridgeError, e:
+        print e 
+     
+      try :
+        self.reset()
+      except rospy.ServiceException, e :
+        print "Service call failed %s" % e
 
     return TriggerResponse(True, "replanned")
 
-  def f(self, p, startLoc, goalLoc) :
-    c1 = math.sqrt((p[0]-startLoc[0])**2+(p[1]-startLoc[1])**2)
-    c2 = math.sqrt((p[0]-goalLoc[0])**2+(p[1]-goalLoc[1]))*2)
-    return c1 + c2
+# currently greedy, return c+c2 for A*
+  def f(self, c, p, goalLoc) :
+    c2 = math.sqrt((p[0]-goalLoc[0])**2+(p[1]-goalLoc[1])**2)
+    return c2
 
-  def adj(self, p) :
+  def adjacent(self, p) :
     res = []
     if p[0] > 0 :
       res.append((p[0]-1, p[1]))
     if p[1] > 0 :
       res.append((p[0], p[1]-1))
-    if p[0] < (self.size[0] - 1)
+    if p[0] < (self.size[0] - 1) :
       res.append((p[0]+1, p[1]))
-    if p[1] < (self.size[1] - 1)
+    if p[1] < (self.size[1] - 1) :
       res.append((p[0], p[1]+1))
+    return res
     
 
   def findPath(self, startLoc, goalLoc) :
@@ -78,18 +98,37 @@ class globalPlanner :
     print goalLoc
 
     opened=[]
-    closed = []
-    heapq.push(opened, (self.f(startLoc, startLoc, goalLoc), startLoc)
-    while len(opened) :
-      v, cell = heapq.heappop(opened)
-      closed.add(cell)
-      if cell is goalLoc :
+    closed = self.nogo.copy()
+    count = 0
+    heapq.heappush(opened, (self.f(0, startLoc, goalLoc), startLoc, []))
+    closed[startLoc[0],startLoc[1]] = 255
+    while len(opened) > 0 :
+      v, cell, history = heapq.heappop(opened)
+      print "Now opening ", cell, goalLoc, startLoc
+      if (cell[0] == goalLoc[0]) and (cell[1] == goalLoc[1]) :
         print "found path"
+        history.append(cell)
+        return history
       else :
         adj = self.adjacent(cell)
         for p in adj :
-          if (self.nogo[p[0],p[1]] == 255) && p not in closed :
-            heapq.push(opened, (self.f(p, startLoc, goalLoc), p)
+          if closed[p[0],p[1]] == 0 :
+            t = copy.copy(history)
+            t.append(p)
+            closed[p[0],p[1]] = 255
+            count = count + 1
+            if count > 10 :
+              try :
+                self.search_pub.publish(self.bridge.cv2_to_imgmsg(closed, "mono8"))
+                print "closed published"
+              except CvBridgeError, e:
+                print e 
+              count = 0
+   
+            print "pushing ", p
+            heapq.heappush(opened, (self.f(len(t), p, goalLoc), p, t))
+    print "no path found"
+    return None
 
       
 
@@ -113,10 +152,11 @@ def main(args) :
   rospy.init_node('globalPlanner')
 
   arg_defaults = {
-     'startloc' : '100,100',
+     'startloc' : '539,309',
      'occupancy' : '/union/people_count',
      'nogo' : '/union/nogo',
      'been' : '/union/been',
+     'search' : '/union/search',
      'waypoints' : '/union/waypoints',
      'prettyMap' : '/union/map',
      'peopleTrigger' : '/union/reset',
