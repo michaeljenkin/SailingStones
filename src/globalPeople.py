@@ -124,7 +124,7 @@ def main(args) :
 
   arg_defaults = {
      'cameraSet' : '/watcher1/image_raw,/watcher2/image_raw,/watcher3/image_raw,/watcher4/image_raw,/watcher5/image_raw',
-     'paramSet' : '/home/viki/catkin_ws/src/sailing_stones/cfg/cam1.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam2.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam3.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam4.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam5.yaml',
+     'paramSet' : '/home/viki/catkin_ws/src/SailingStones/cfg/cam1.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam2.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam3.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam4.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam5.yaml',
      'maskSet' : '/watcher1/mask,/watcher2/mask,/watcher3/mask,/watcher4/mask,/watcher5/mask',
      'trackSet' : '/watcher1/tracks,/watcher2/tracks,/watcher3/tracks,/watcher4/tracks,/watcher5/tracks',
      'sink' : '/union/people_raw',

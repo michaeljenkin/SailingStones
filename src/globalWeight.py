@@ -146,7 +146,7 @@ def main(args) :
   rospy.init_node('globalWeight')
 
   arg_defaults = {
-     'paramSet' : '/home/viki/catkin_ws/src/sailing_stones/cfg/cam1.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam2.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam3.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam4.yaml,/home/viki/catkin_ws/src/sailing_stones/cfg/cam5.yaml',
+     'paramSet' : '/home/viki/catkin_ws/src/SailingStones/cfg/cam1.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam2.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam3.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam4.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam5.yaml',
      'maskSet' : '/watcher1/mask,/watcher2/mask,/watcher3/mask,/watcher4/mask,/watcher5/mask',
      'trackSet' : '/watcher1/tracks,/watcher2/tracks,/watcher3/tracks,/watcher4/tracks,/watcher5/tracks',
      'sink' : '/union/people_count',
