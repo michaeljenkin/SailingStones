@@ -28,6 +28,107 @@ cv_image4 = None
 cv_image5 = None
 cv_image6 = None
 
+
+class HomographyCalib:
+
+    def __init__(self, image_topics):
+        self.bridge = CvBridge()
+
+        # wait for slow topics
+        rospy.sleep(rospy.Duration(0.5))
+
+        published_topics = rospy.get_published_topics()
+
+        # only interested in published topics
+        self.img_topics = [topic for topic in image_topics if topic in published_topics]
+        self.images = [None for _ in self.image_topics]
+
+        for img_topic in self.image_topics:
+            rospy.Subscriber(img_topic, Image, self.image_callback, img_topic)
+
+        self.current_point = 0
+        self.points = [None, None, None, None]
+        self.active_image = 0
+
+        ##  GUI Initialization
+        self.app = QApplication([])
+        self.widget = QWidget()
+        self.widget.setWindowTitle('Homography Calibration')
+        self.widget.resize(800,800)
+
+        layout = QVBoxLayout()
+
+        combobox = QComboBox(self.widget)
+        for i, topic in self.img_topics:
+            combobox.addItem(topic)
+            combobox[topic].connect(self.select_camera)
+        layout.addWidget(self.combobox)
+
+        self.image_view = QLabel()
+        self.image_view.mousePressEvent = self.click_detected
+        layout.addWidget(self.image_view)
+
+        frame = QFrame()
+        gridlayout = QGridLayout()
+
+        self.inputs = [[QLineEdit('') for _ in range(2)] for _ in range(4)]
+
+        for i in range(4):
+            gridlayout.addWidget(QLabel('Point %i' % i), 0, i)
+            gridlayout.addWidget(self.input_grid[i][0], 1, i)
+            gridlayout.addWidget(self.input_grid[i][1], 2, i)
+
+        frame.setLayout(layout)
+
+        button = QPushButton('Reset Camera Points')
+        button.clicked.connect(self.reset_camera_points)
+        layout.addWidget(button)
+
+        button = QPushButton('Calculate Homography')
+        button.clicked.connect(self.calculate_homography)
+        layout.addWidget(button)
+
+        self.widget.setLayout(layout)
+
+        # Show the window and run the app
+        self.widget.show()
+        self.app.exec_()
+        pass
+
+    def image_callback(self, msg, topic):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError, e:
+            return
+
+        index = self.image_topics.index(topic)
+        self.images[index] = cv_image
+        pass
+
+    def click_detected(self, event):
+        x, y = event.pos().x(), event.pos().y()
+        if self.current_point < 4:
+            self.points[self.current_point] = (x, y)
+            self.current_point += 1
+        else:
+            rospy.logwarn("Too many points selected thus far")
+        pass
+
+    def reset_camera_points(self):
+        self.points = [None, None, None, None]
+        self.current_point = 0
+        pass
+
+    def calculate_homography(self):
+        pass
+
+    def select_camera(self, i):
+        self.active_image = i
+        self.reset_camera_points()
+        pass
+
+
+
 class get_points :
   def __init__(self, source1, source2, source3, source4, source5, source6, sink1, sink2, sink3, sink4, sink5, sink6) :
     self.image_pub1 = rospy.Publisher(sink1, Image, queue_size=25)
@@ -506,7 +607,7 @@ def main(args) :
   get_points(**args)
   try :
     rospy.spin()
-  except rospy.ROSInterruptException, e:
+  except KeyBoardInterrupt:
     print "Shutting down"
   cv2.destroyAllWindows()
 

@@ -15,7 +15,6 @@
       <param name="source" value="/calibimage1/image_raw" />
       <param name="sink" value="/calibpoints1/image_raw" />
     </node>
-
   </group>
 
   <group ns="calibimage2">
@@ -33,9 +32,9 @@
       <param name="source" value="/calibimage2/image_raw" />
       <param name="sink" value="/calibpoints2/points" /> 
     </node>
-
   </group>
-<group ns="calibrate">
+
+  <group ns="calibrate">
     <arg name="std_topic" default="image_raw"/>
     <arg name="camera2_info_url" default="package://sailing_stones/cfg/calibcam3.yaml" />
 
@@ -44,8 +43,7 @@
     <node pkg="sailing_stones" type="calibpoints.py" output="screen" name="calibpon">
       <param name="source1" value="/calibimage1/image_raw" />
       <param name="source2" value="/calibimage2/image_raw" />
-      <param name="sink" value="/calibrated/image_raw/> 
+      <param name="sink" value="/calibrated/image_raw" />
     </node>
-
   </group>
 </launch>

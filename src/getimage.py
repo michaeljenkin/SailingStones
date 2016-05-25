@@ -13,6 +13,7 @@ import rospy
 from sensor_msgs.msg import CompressedImage, CameraInfo
 import camera_info_manager
 
+
 class StreamThread(threading.Thread):
     def __init__(self, axis):
         threading.Thread.__init__(self)
@@ -143,6 +144,7 @@ class StreamThread(threading.Thread):
         cimsg.height = self.axis.height
         self.axis.caminfo_pub.publish(cimsg)
 
+
 class Axis:
     def __init__(self, hostname, username, password, width, height, frame_id, 
                  camera_info_url, use_encrypted_password):
@@ -191,6 +193,7 @@ def main():
     args = updateArgs(arg_defaults)
     Axis(**args)
     rospy.spin()
+
 
 def updateArgs(arg_defaults):
     '''Look up parameters starting in the driver's private parameter space, but
