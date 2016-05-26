@@ -24,7 +24,7 @@ from std_srvs.srv import *
 
 class globalPlanner :
  
-  def __init__(self, startloc, occupancy, nogo, been, search, waypoints, prettyMap, peopleTrigger, replanTrigger) :
+  def __init__(self, startloc, occupancy, nogo, been, search, waypoints, prettyMap, replanTrigger) :
     self.WIDTH = 20
 
     t = startloc.split(',')
@@ -33,11 +33,12 @@ class globalPlanner :
     self.nogo = None
     self.been = None
     self.size = (0,0)
+    self.seq = 1
 
     self.prettyMap_pub = rospy.Publisher(prettyMap, Image, queue_size=1)
     self.been_pub = rospy.Publisher(been, Image, queue_size=1)
     self.search_pub = rospy.Publisher(search, Image, queue_size=1)
-    self.reset = rospy.ServiceProxy(peopleTrigger, Trigger)
+    self.waypoints_pub = rospy.Publisher(waypoints, Vector3DArray, queue_size=1)
 
     self.bridge = CvBridge()
 
@@ -58,8 +59,8 @@ class globalPlanner :
     wheretogo = cv2.divide(self.occupancy, self.been)
 
     t = cv2.minMaxLoc(wheretogo)
+    print t
     z = self.findPath(self.locn, t[3])
-    print z
 
     if z != None :
       cv2.circle(self.been, (int(t[3][0]-self.WIDTH/2), int(t[3][0]-self.WIDTH/2)), self.WIDTH, 255, thickness=cv2.cv.CV_FILLED)
@@ -68,10 +69,21 @@ class globalPlanner :
       except CvBridgeError, e:
         print e 
      
+      list = Vector3DArray()
+      z.reverse()
+      for c in z :
+        vec3 = Vector3()
+        vec3.x = c[0]
+        vec3.y = c[1]
+        vec3.z = 0
+        list.data.append(vec3)
       try :
-        self.reset()
-      except rospy.ServiceException, e :
-        print "Service call failed %s" % e
+        list.header.stamp = rospy.Time.now()
+        list.header.seq = self.seq
+        self.seq = self.seq + 1
+        self.waypoints_pub.publish(list)
+      except CvBridgeError, e:
+        print e
 
     return TriggerResponse(True, "replanned")
 
@@ -104,9 +116,7 @@ class globalPlanner :
     closed[startLoc[0],startLoc[1]] = 255
     while len(opened) > 0 :
       v, cell, history = heapq.heappop(opened)
-      print "Now opening ", cell, goalLoc, startLoc
       if (cell[0] == goalLoc[0]) and (cell[1] == goalLoc[1]) :
-        print "found path"
         history.append(cell)
         return history
       else :
@@ -120,14 +130,11 @@ class globalPlanner :
             if count > 10 :
               try :
                 self.search_pub.publish(self.bridge.cv2_to_imgmsg(closed, "mono8"))
-                print "closed published"
               except CvBridgeError, e:
                 print e 
               count = 0
    
-            print "pushing ", p
             heapq.heappush(opened, (self.f(len(t), p, goalLoc), p, t))
-    print "no path found"
     return None
 
       
@@ -159,7 +166,6 @@ def main(args) :
      'search' : '/union/search',
      'waypoints' : '/union/waypoints',
      'prettyMap' : '/union/map',
-     'peopleTrigger' : '/union/reset',
      'replanTrigger' : '/union/moveRobot'
         }
   args = updateArgs(arg_defaults)
