@@ -17,6 +17,7 @@ import yaml
 import cv
 import gc
 import heapq
+from threading import Lock
 from geometry_msgs.msg import Vector3
 from sailing_stones.msg import Vector3DArray
 
@@ -35,6 +36,7 @@ class globalWeight :
     self.calib = []
     self.maskImages = [None] * len(self.masks)
     self.currentBlobs = []
+    self.lock = Lock()
 
     print "reading in yaml files"
     for i,val in enumerate(self.yamls) :
@@ -86,6 +88,7 @@ class globalWeight :
    
  
   def trackCallback(self, data, *args) :
+    self.lock.acquire()
     id = args[0]
     q = (data.header.stamp.secs, id, data.data)
     heapq.heappush(self.currentBlobs, q)
@@ -96,7 +99,6 @@ class globalWeight :
       allseen = allseen and (x != None)
 
     if allseen :
-      print "Updating counts"
 
       counts = []
       for i,dsti in enumerate(self.maskImages) :
@@ -126,7 +128,6 @@ class globalWeight :
         combined = cv2.add(combined, img)
 
       v = cv2.minMaxLoc(combined)
-      print "minmax ", v
       v = v[1]
       if v == 0:
         v = 1.0
@@ -141,6 +142,7 @@ class globalWeight :
         print e 
    
       gc.collect()
+    self.lock.release()
 
 def main(args) :
   rospy.init_node('globalWeight')

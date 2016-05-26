@@ -17,6 +17,7 @@ import yaml
 import cv
 import gc
 import heapq
+from threading import Lock
 from geometry_msgs.msg import Vector3
 from sailing_stones.msg import Vector3DArray
 
@@ -36,6 +37,7 @@ class globalImage :
     self.images = [None] * len(self.cameras)
     self.maskImages = [None] * len(self.masks)
     self.currentBlobs = []
+    self.lock = Lock()
 
     print "reading in yaml files"
     for i,val in enumerate(self.yamls) :
@@ -56,19 +58,24 @@ class globalImage :
       self.trackSub = rospy.Subscriber(val, Vector3DArray, self.trackCallback, callback_args=i)
 
   def trackCallback(self, data, *args) :
+    self.lock.acquire()
     id = args[0]
     q = (data.header.stamp.secs, id, data.data)
     heapq.heappush(self.currentBlobs, q)
+    self.lock.release()
 
   def maskCallback(self, data, *args) :
+    self.lock.acquire()
     id = args[0]
     try :
       cv_image = self.bridge.imgmsg_to_cv2(data, "mono8")
       self.maskImages[id] = cv_image
     except CvBridgeError, e:
       print e
+    self.lock.release()
  
   def camCallback(self, data, *args) :
+    self.lock.acquire()
     id = args[0]
 
     try :
@@ -118,6 +125,7 @@ class globalImage :
    
       self.images = [None] * len(self.cameras)
       gc.collect()
+    self.lock.release()
 
 def main(args) :
   rospy.init_node('globalImage')

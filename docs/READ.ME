@@ -12,9 +12,24 @@ peopleBlobs.py - finds people (blobs) in a single image
 globalImage.py - builds the global image (demo use only)
 globalPeople.py - builds the global set of where people have been (demo use)
 globalWeight.py - builds the global weight map
+globalPlanner.py - does path planning
 
 The topics
 
 /watchern/raw_image - raw image stream from camera n
 /watchern/background - estimated background
-/watchern/
+/watchern/changed - change map
+/watchern/mask - where the robot cannot look (and should not go)
+/watchern/people - image overlay of identified blobs
+/watchern/tracks - blobs as list of centres (r,c) and radii
+/union/nogo - where the robot should not go
+/union/people_count - people map 
+/union/search - demo of the search process
+/union/waypoints - list of waypoints
+
+There is a tracker.launch that launces the individual camera processing
+run sailing_stones globalWeight.py to merge the cameras
+run sailing_stones globalPlanner.py to do path planning
+
+Services
+
