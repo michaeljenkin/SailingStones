@@ -59,6 +59,7 @@ class globalPlanner :
     wheretogo = cv2.divide(self.occupancy, self.been)
 
     t = cv2.minMaxLoc(wheretogo)
+    print t
     z = self.findPath(self.locn, t[3])
 
     if z != None :
