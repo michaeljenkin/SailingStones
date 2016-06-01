@@ -1,10 +1,89 @@
 #!/usr/bin/env python
-import rospy
+import rospy, rospkg
 import sys
 import cv2
+
+from sklearn.naive_bayes import GaussianNB
+
+from os.path import join
 import numpy as np
+from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError;
+from cv_bridge import CvBridge, CvBridgeError
+
+from scipy.stats import multivariate_normal
+
+class Particle:
+    def __init__(self):
+        self.pose = Pose2D()
+
+    def update(self, position, covariance):
+        pose = multivariate_normal.rvs(mean=np.asarray(position).flatten(), cov=covariance).reshape(2, 1)
+        pass
+
+
+class ParticleFilter:
+    def __init__(self, num_particles):
+        self.particles = [Particle() for _ in range(num_particles)]
+        pass
+
+
+class BayesianPixelClassifier:
+    def __init__(self):
+        self.classifier = GaussianNB()
+        pass
+
+    def train(self, image, mask):
+        if image.shape[:2] != mask.shape[:2]:
+            return
+        width, height = image.shape[:2]
+        self.classifier.fit(image.reshape(width*height, 3).tolist(),
+                            mask.reshape(width*height).tolist())
+        return
+
+
+    def predict(self, image, invert=True):
+        width, height = image.shape[:2]
+
+        img = image.reshape((width*height, 3))
+
+        result = self.classifier.predict(img.tolist()).reshape((width, height))
+
+        return result
+
+
+class RobotFinder:
+    def __init__(self, training_images, response_images):
+        self.classifier = BayesianPixelClassifier()
+        self.detector = cv2.SimpleBlobDetector()
+        self.bridge = CvBridge()
+
+        package = rospkg.RosPack().get_path('sailing_stones')
+        for img_name, mask_name in zip(training_images, response_images):
+            img = cv2.imread(join(package, img_name))
+            mask = cv2.imread(join(package, mask_name), cv2.CV_LOAD_IMAGE_GRAYSCALE)
+
+            if img is None or mask is None:
+                continue
+
+            self.classifier.train(img, mask)
+        pass
+
+    def image_callback(self, message):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(message, "bgr8")
+        except CvBridgeError, e:
+            print e
+
+        cv2.cvtColor(cv_image, cv_image, cv2.COLOR_BGR2RGB)
+
+        grey = self.classifier.predict(cv_image)
+
+        keypoints = self.detector.detect(grey)
+
+        im_with_keypoints = cv2.drawKeypoints(grey, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+        pass
 
 template = None
 tempcircle = []
@@ -12,12 +91,10 @@ tempcircle = []
 smallcircle = []
 Bigcircle = []
 
-
 class find_robot:
     firstframe = None
 
     def __init__(self, source, sink):
-
         self.bridge = CvBridge()
         self.image_sub1 = rospy.Subscriber(source, Image, self.callback)
         self.image_pub = rospy.Publisher(sink, Image, queue_size=10)
@@ -68,9 +145,9 @@ class find_robot:
                     1] and 55000000 < max_val < 80000000:
                     tempcircle.append((x, y, r))
 
-                # show the output image
-                # output=np.hstack([cv_image, output]))
-                # print tempcircle, max_val
+                    # show the output image
+                    # output=np.hstack([cv_image, output]))
+                    # print tempcircle, max_val
             tempcircle[:] = []
 
         try:
@@ -85,16 +162,19 @@ class find_robot:
 def main(args):
     rospy.init_node('find_robot')
     arg_defaults = {
-        'source': '/watcher/image_raw',
-        'sink': '/findrobot/image_raw',
+        'training_images' : ['template/IMG_1.jpg', 'template/IMG_2.jpg', 'template/IMG_3.jpg',
+                             'template/IMG_4.jpg', 'template/IMG_5.jpg', 'template/IMG_6.jpg'],
+        'response_images' : ['template/IMG_1_mask.jpg', 'template/IMG_2_mask.jpg', 'template/IMG_3_mask.jpg',
+                             'template/IMG_4_mask.jpg', 'template/IMG_5_mask.jpg', 'template/IMG_6_mask.jpg'],
+        #'source': '/watcher/image_raw',
+        #'sink': '/findrobot/image_raw',
     }
     args = updateArgs(arg_defaults)
     find_robot(**args)
     try:
         rospy.spin()
-    except KeyBoardInterrupt:
-        print "Shutting down"
-    cv2.destroyAllWindows()
+    except rospy.ROSInterruptException, e:
+        print e
 
 
 def updateArgs(arg_defaults):
