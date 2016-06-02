@@ -7,7 +7,7 @@
 # @version 1.0
 # @author Enas and Michael
 #####################################################################################
-import rospy
+import rospy, rospkg
 import sys
 import cv2
 import numpy as np 
@@ -22,15 +22,18 @@ from geometry_msgs.msg import Vector3
 from sailing_stones.msg import Vector3DArray
 from std_srvs.srv import *
 
+
+from os.path import join, isfile, isdir
+
 class globalWeight :
  
  
   def __init__(self, maskSet, paramSet, trackSet, sink, nogo, dimension, reset) :
     self.image_pub = rospy.Publisher(sink, Image, queue_size=10)
-    self.nogo_pub = rospy.Publisher(nogo, Image, latch=True)
-
+    self.nogo_pub = rospy.Publisher(nogo, Image, latch=True, queue_size=10)
+    package = rospkg.RosPack().get_path('sailing_stones')
     self.masks = maskSet.split(',')
-    self.yamls = paramSet.split(',')
+    self.yamls = [join(package, param) for param in paramSet.split(',')]
     self.tracks = trackSet.split(',')
     self.dim =  dimension.split(',')
     self.dim = (int(self.dim[0]), int(self.dim[1]))
@@ -159,9 +162,9 @@ def main(args) :
   rospy.init_node('globalWeight')
 
   arg_defaults = {
-     'paramSet' : '/home/viki/catkin_ws/src/SailingStones/cfg/cam1.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam2.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam3.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam4.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam5.yaml',
-     'maskSet' : '/watcher1/mask,/watcher2/mask,/watcher3/mask,/watcher4/mask,/watcher5/mask',
-     'trackSet' : '/watcher1/tracks,/watcher2/tracks,/watcher3/tracks,/watcher4/tracks,/watcher5/tracks',
+     'paramSet' : 'cfg/cam1.yaml,cfg/cam2.yaml,cfg/cam3.yaml',
+     'maskSet' : '/watcher1/mask,/watcher2/mask,/watcher3/mask',
+     'trackSet' : '/watcher1/tracks,/watcher2/tracks,/watcher3/tracks',
      'sink' : '/union/people_count',
      'nogo' : '/union/nogo',
      'reset' : '/union/reset',
