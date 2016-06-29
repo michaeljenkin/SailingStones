@@ -67,7 +67,7 @@ class motion_images :
 
     (cnts, _) = cv2.findContours(diff, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    list = Vector3DArray()
+    points = Vector3DArray()
     for c in cnts: 
       (x, y, w, h) = cv2.boundingRect(c)
       if cv2.contourArea(c) < self.MIN_CONTOUR :
@@ -83,16 +83,15 @@ class motion_images :
       vec3.x = x
       vec3.y = y
       vec3.z = min(w/2,h/2)
-      list.data.append(vec3)
-
+      points.data.append(vec3)
 
     try :
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(localImage, "bgr8"))
-      if len(list.data) > 0 :
-        list.header.stamp = rospy.Time.now()
-        list.header.seq = self.seq
+      if len(points.data) > 0 :
+        points.header.stamp = rospy.Time.now()
+        points.header.seq = self.seq
         self.seq = self.seq + 1
-        self.tracks_pub.publish(list)
+        self.tracks_pub.publish(points)
     except CvBridgeError, e:
       print e
 

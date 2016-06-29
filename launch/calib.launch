@@ -9,15 +9,6 @@
       <param name="source1" value="/watcher1/image_raw" />
       <param name="source2" value="/watcher2/image_raw" />
       <param name="source3" value="/watcher3/image_raw" />
-      <param name="source4" value="/watcher4/image_raw" />
-      <param name="source5" value="/watcher5/image_raw" />
-      <param name="source6" value="/watcher6/image_raw" />
-      <param name="sink1" value="/nozone1/image_raw" />
-      <param name="sink2" value="/nozone2/image_raw" />
-      <param name="sink3" value="/nozone3/image_raw" />
-      <param name="sink4" value="/nozone4/image_raw" />
-      <param name="sink5" value="/nozone5/image_raw" />
-      <param name="sink6" value="/nozone6/image_raw" />
     </node>
 
   </group>

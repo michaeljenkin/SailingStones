@@ -7,7 +7,7 @@
 # @version 1.0
 # @author Enas and Michael
 #####################################################################################
-import rospy
+import rospy, rospkg
 import sys
 import cv2
 import numpy as np 
@@ -18,16 +18,18 @@ from PIL import Image as test
 import cv
 import gc
 
+from os.path import join, isfile, isdir
+
 
 class globalImage :
  
  
   def __init__(self, cameraSet, maskSet, paramSet, sink, dimension) :
     self.image_pub = rospy.Publisher(sink, Image, queue_size=10)
-
+    package = rospkg.RosPack().get_path('sailing_stones')
     self.cameras = cameraSet.split(',')
     self.masks = maskSet.split(',')
-    self.yamls = paramSet.split(',')
+    self.yamls = [join(package, param) for param in paramSet.split(',')]
     self.dim =  dimension.split(',')
     self.dim = (int(self.dim[0]), int(self.dim[1]))
     self.calib = []
@@ -112,12 +114,9 @@ def main(args) :
   rospy.init_node('globalImage')
 
   arg_defaults = {
-     'cameraSet' : '/watcher1/image_raw,/watcher2/image_raw,/watcher3/image_raw,/watcher4/image_raw,/watcher5/image_raw',
-     'paramSet' : '/home/viki/catkin_ws/src/SailingStones/cfg/cam1.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam2.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam3.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam4.yaml,/home/viki/catkin_ws/src/SailingStones/cfg/cam5.yaml',
-     'maskSet' : '/watcher1/mask,/watcher2/mask,/watcher3/mask,/watcher4/mask,/watcher5/mask',
-#     'cameraSet' : '/watcher1/image_raw',
-#     'paramSet' : '/home/viki/catkin_ws/src/sailing_stones/cfg/cam1.yaml',
-#     'maskSet' : '/watcher1/mask',
+     'cameraSet' : '/watcher1/image_raw,/watcher2/image_raw,/watcher3/image_raw',
+     'paramSet' : 'cfg/cam1.yaml,cfg/cam2.yaml,cfg/cam3.yaml',
+     'maskSet' : '/watcher1/mask,/watcher2/mask,/watcher3/mask',
      'sink' : '/union/image_raw',
      'dimension' : '1000,1000'
         }

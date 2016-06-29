@@ -9,6 +9,7 @@ from PyQt4.QtWebKit import *
 
 import rospy, rospkg
 from sensor_msgs.msg import Image
+import thread
 
 import sys, re, os
 import yaml
@@ -18,6 +19,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 
+'''
 refPt = []
 
 pointsworld = []
@@ -31,7 +33,7 @@ cv_image3 = None
 cv_image4 = None
 cv_image5 = None
 cv_image6 = None
-
+'''
 
 class HomographyCalib:
     def __init__(self, image_topics, calibration_directory):
@@ -43,7 +45,7 @@ class HomographyCalib:
         published_topics = rospy.get_published_topics()
 
         # only interested in published topics
-        self.img_topics = [topic for topic in image_topics if topic in published_topics]
+        self.image_topics = [topic[0] for topic in published_topics if topic[0] in image_topics]
 
         for img_topic in self.image_topics:
             rospy.Subscriber(img_topic, Image, self.image_callback, img_topic)
@@ -58,21 +60,21 @@ class HomographyCalib:
         if not isdir(calib_dir):
             os.makedirs(calib_dir)
 
-        self.calib_dir = calibration_directory
+        self.calib_dir = calib_dir
 
         ##  GUI Initialization
         self.app = QApplication([])
         self.widget = QWidget()
         self.widget.setWindowTitle('Homography Calibration')
-        self.widget.resize(800, 800)
+        self.widget.resize(640, 650)
 
         layout = QVBoxLayout()
 
         combobox = QComboBox(self.widget)
-        for i, topic in self.img_topics:
+        for i, topic in enumerate(self.image_topics):
             combobox.addItem(topic)
-            combobox[topic].connect(self.select_camera)
-        layout.addWidget(self.combobox)
+        combobox.currentIndexChanged.connect(self.select_camera)
+        layout.addWidget(combobox)
 
         self.image_view = QLabel()
         self.image_view.mousePressEvent = self.click_detected
@@ -94,21 +96,30 @@ class HomographyCalib:
             gridlayout.addWidget(x_value, 1, i)
             gridlayout.addWidget(y_value, 2, i)
 
-        frame.setLayout(layout)
+        frame.setLayout(gridlayout)
+	layout.addWidget(frame)
+
+        button_frame = QFrame()
+        hlayout = QHBoxLayout()
 
         button = QPushButton('Reset Camera Keypoints')
         button.clicked.connect(self.reset_camera_keypoints)
-        layout.addWidget(button)
+        hlayout.addWidget(button)
 
         button = QPushButton('Reset Global Keypoints')
         button.clicked.connect(self.reset_world_keypoints)
-        layout.addWidget(button)
+        hlayout.addWidget(button)
 
         button = QPushButton('Calculate Homography')
         button.clicked.connect(self.calculate_homography)
-        layout.addWidget(button)
+        hlayout.addWidget(button)
+
+        button_frame.setLayout(hlayout)
+        layout.addWidget(button_frame)
 
         self.widget.setLayout(layout)
+
+        QTimer.singleShot(100, self.display_image)
 
         # Show the window and run the app
         self.widget.show()
@@ -125,8 +136,6 @@ class HomographyCalib:
             self.image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError, e:
             return
-
-        self.display_image()
         pass
 
     def display_image(self):
@@ -146,6 +155,8 @@ class HomographyCalib:
         cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
         q_image = QImage(img, img.shape[1], img.shape[0], QImage.Format_RGB888)
         self.image_view.setPixmap(QPixmap.fromImage(q_image))
+
+        QTimer.singleShot(100, self.display_image)
         pass
 
     def show_warning(self, message):
@@ -159,8 +170,6 @@ class HomographyCalib:
     def mouse_move(self, event):
         x = event.pos().x()
         y = event.pos().y()
-
-        self.mouse_position = (x,y)
         pass
 
     def click_detected(self, event):
@@ -192,11 +201,11 @@ class HomographyCalib:
 
         world_coords = []
         for index in range(len(self.inputs)):
-            x_str = self.inputs[index][0].text()
+            x_str = str(self.inputs[index][0].text())
             if not isfloat(x_str):
                 return self.show_warning("X value of world coordinate point %i is invalid" % index)
 
-            y_str = self.inputs[index][1].text()
+            y_str = str(self.inputs[index][1].text())
             if not isfloat(y_str):
                 return self.show_warning("Y value of world coordinate point %i is invalid" % index)
 
@@ -205,15 +214,15 @@ class HomographyCalib:
         M, mask = cv2.findHomography(np.array(self.points, dtype='float32'),
                                      np.array(world_coords, dtype='float32'), cv2.RANSAC, 5.0)
 
-        image_topic = self.img_topics[self.current_point]
+        image_topic = self.image_topics[self.active_image]
 
         true_index = re.findall(r'\d+', image_topic)[-1]
 
-        calibration_file = join(self.calib_dir, 'cam%i.yaml' % true_index)
+        calibration_file = join(self.calib_dir, 'cam%d.yaml' % int(true_index))
 
         data = yaml.load(open(calibration_file))
         data['instances'][0]['R'] = M.tolist()
-        data['instances'][0]['P'] = self.points.tolist()
+        data['instances'][0]['P'] = np.array(self.points).tolist()
 
         with open(calibration_file, 'w') as yaml_file:
             yaml_file.write(yaml.dump(data, default_flow_style=False))
@@ -232,7 +241,7 @@ def main(args):
 
     arg_defaults = {
         'image_topics' : ['/watcher1/image_raw', '/watcher2/image_raw', '/watcher3/image_raw', '/watcher4/image_raw',
-                          '/watcher5/image_raw', '/watcher6/image_raw'],
+                          '/watcher5/image_raw', '/watcher6/image_raw', '/watcher7/image_raw'],
         'calibration_directory' : 'cfg/test/'
     }
     args = updateArgs(arg_defaults)
