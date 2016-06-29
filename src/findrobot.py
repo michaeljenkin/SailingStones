@@ -2,8 +2,12 @@
 import rospy, rospkg
 import sys
 import cv2
+import copy
 
 from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors.nearest_centroid import NearestCentroid
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import svm
 
 from os.path import join
 import numpy as np
@@ -12,13 +16,19 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 from scipy.stats import multivariate_normal
+import numpy.random as npr
+import numpy as np
 
 class Particle:
     def __init__(self):
-        self.pose = Pose2D()
+        self.pose, self.weight = Pose2D(), 1.0
 
-    def update(self, position, covariance):
-        pose = multivariate_normal.rvs(mean=np.asarray(position).flatten(), cov=covariance).reshape(2, 1)
+    def update(self, control, cov_c, position, cov_p):
+        pose = [pose.x + control[0], pose.y + control[1], pose.theta + control[2]]
+        
+        pose = multivariate_normal.rvs(mean=np.asarray(pose).flatten(), cov=cov_c).reshape(2, 1)
+        
+        self.weight = multivariate_normal.pdf(pose, mean=position, cov=cov_p)
         pass
 
 
@@ -27,46 +37,68 @@ class ParticleFilter:
         self.particles = [Particle() for _ in range(num_particles)]
         pass
 
+    def update(self, control, cov_c, position, cov_p):
+        for particle in self.particles:
+            particle.update(control, cov_c, position, cov_p)
+        
+        weights = np.array([particle.weight for particle in self.particles])
+        
+        N_eff = 1 / sum(np.power(weights,2))
+        if N_eff < len(self.particles) / 2:
+            sample_particles = []
+            for i in npr.choice(range(len(self.particles)), len(self.particles), p=weights):
+                if self.particles[i] in sample_particles:
+                    particle = copy.deepcopy(self.particles[i])
+                else:
+                    particle = self.particles[i]
+                sample_particles.append(particle)
+                pass
+            self.particles = sample_particles
+        pass
+
 
 class BayesianPixelClassifier:
     def __init__(self):
-        self.classifier = GaussianNB()
+        self.classifier = RandomForestClassifier(n_estimators=10) #GaussianNB()
         pass
 
     def train(self, image, mask):
         if image.shape[:2] != mask.shape[:2]:
             return
         width, height = image.shape[:2]
-        self.classifier.fit(image.reshape(width*height, 3).tolist(),
-                            mask.reshape(width*height).tolist())
+        self.classifier.fit(image.reshape(width*height, 3).tolist(), mask.reshape(width*height).tolist())
         return
-
 
     def predict(self, image, invert=True):
         width, height = image.shape[:2]
-
         img = image.reshape((width*height, 3))
-
         result = self.classifier.predict(img.tolist()).reshape((width, height))
-
         return result
 
 
 class RobotFinder:
-    def __init__(self, training_images, response_images):
+    def __init__(self, training_images, response_images, test_name):
         self.classifier = BayesianPixelClassifier()
         self.detector = cv2.SimpleBlobDetector()
         self.bridge = CvBridge()
-
-        package = rospkg.RosPack().get_path('sailing_stones')
+        
+        package = join(rospkg.RosPack().get_path('sailing_stones'), 'cfg')
         for img_name, mask_name in zip(training_images, response_images):
             img = cv2.imread(join(package, img_name))
             mask = cv2.imread(join(package, mask_name), cv2.CV_LOAD_IMAGE_GRAYSCALE)
-
+            print "Train"
             if img is None or mask is None:
                 continue
-
             self.classifier.train(img, mask)
+        print "Test %s" % join(package, test_name)
+        test = cv2.imread(join(package, test_name))
+        print "Classify"
+        out = self.classifier.predict(test)
+        print "Output %s" % join(package, "output.jpg")
+        cv2.imwrite(join(package, "output.jpg"), out)
+        pass
+    
+    def odom_callback(self, message):
         pass
 
     def image_callback(self, message):
@@ -85,96 +117,31 @@ class RobotFinder:
 
         pass
 
-template = None
-tempcircle = []
-
-smallcircle = []
-Bigcircle = []
-
-class find_robot:
-    firstframe = None
-
-    def __init__(self, source, sink):
-        self.bridge = CvBridge()
-        self.image_sub1 = rospy.Subscriber(source, Image, self.callback)
-        self.image_pub = rospy.Publisher(sink, Image, queue_size=10)
-
-    def callback(self, data):
-        try:
-            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        except CvBridgeError, e:
-            print e
-
-        (rows, cols, channels) = cv_image.shape
-
-        # load the image, clone it for output, and then convert it to grayscale
-
-        output = cv_image.copy()
-        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-
-        # gray = cv2.medianBlur(gray, 5)
-        template = cv2.imread("/home/enas/template.jpg")
-        if template is None:
-            print "None"
-        template = cv2.cvtColor(template, cv2.COLOR_RGB2GRAY)
-
-        result = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-        top_left = max_loc
-        top_left = (top_left[0] - 10, top_left[1] - 10)
-        h, w = template.shape
-        bottom_right = (top_left[0] + w + 20, top_left[1] + h + 20)
-        if 60000000 < max_val < 80000000:
-            cv2.rectangle(output, top_left, bottom_right, (0, 0, 255), 3)
-
-        # detect circles in the image
-        circles = cv2.HoughCircles(gray, cv2.cv.CV_HOUGH_GRADIENT, 2.2, 25.0, minRadius=20, maxRadius=66)
-        # print circles
-        # ensure at least some circles were found
-        if circles is not None:
-            # convert the (x, y) coordinates and radius of the circles to integers
-            circles = np.round(circles[0, :]).astype("int")
-
-            # loop over the (x, y) coordinates and radius of the circle
-            for (x, y, r) in circles:
-                # draw the circle in the output image, then draw a rectangle
-                # corresponding to the center of the circle
-                cv2.circle(output, (x, y), r, (0, 255, 0), 4)
-                cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
-                if top_left[0] < x < bottom_right[0] and top_left[1] < y < bottom_right[
-                    1] and 55000000 < max_val < 80000000:
-                    tempcircle.append((x, y, r))
-
-                    # show the output image
-                    # output=np.hstack([cv_image, output]))
-                    # print tempcircle, max_val
-            tempcircle[:] = []
-
-        try:
-
-            self.image_pub.publish(self.bridge.cv2_to_imgmsg(output, "bgr8"))
-
-
-        except CvBridgeError, e:
-            print e
-
-
 def main(args):
     rospy.init_node('find_robot')
     arg_defaults = {
-        'training_images' : ['template/IMG_1.jpg', 'template/IMG_2.jpg', 'template/IMG_3.jpg',
-                             'template/IMG_4.jpg', 'template/IMG_5.jpg', 'template/IMG_6.jpg'],
-        'response_images' : ['template/IMG_1_mask.jpg', 'template/IMG_2_mask.jpg', 'template/IMG_3_mask.jpg',
-                             'template/IMG_4_mask.jpg', 'template/IMG_5_mask.jpg', 'template/IMG_6_mask.jpg'],
-        #'source': '/watcher/image_raw',
-        #'sink': '/findrobot/image_raw',
+        'training_images' : [
+                             'template/IMG_1.jpg',
+                             'template/IMG_2.jpg',
+                             'template/IMG_3.jpg',
+                             'template/IMG_4.jpg',
+                             'template/IMG_0293.jpg'],
+        'response_images' : [
+                             'template/IMG_1_mask.jpg',
+                             'template/IMG_2_mask.jpg',
+                             'template/IMG_3_mask.jpg',
+                             'template/IMG_4_mask.jpg',
+                             'template/IMG_0293_mask.jpg'],
+        'test_name' : 'IMG_0293.jpg'
     }
     args = updateArgs(arg_defaults)
-    find_robot(**args)
-    try:
-        rospy.spin()
-    except rospy.ROSInterruptException, e:
-        print e
+    RobotFinder(**args)
+    print "Done"
+    return
+    #try:
+    #    rospy.spin()
+    #except rospy.ROSInterruptException, e:
+    #    print e
 
 
 def updateArgs(arg_defaults):
